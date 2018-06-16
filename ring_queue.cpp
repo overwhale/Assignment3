@@ -26,7 +26,7 @@ class RingQueue{
     // forward, etc.).
     public: 
         class iterator;
-
+        class const_iterator;
 
 
     // Aliases. 
@@ -59,15 +59,18 @@ class RingQueue{
 
             public:
                 reference operator*() {
-                    return parent->buffer[parent.begin_index + offset] ;  
+					return parent->buffer[(parent->begin_index + offset) % MAX_SIZE ];
                 }
 
                 iterator& operator++(){
-                    return iterator(parent,++offset);
+                    this->offset++;
+                    return *this;
                 }
 
                 iterator operator++( int unused ){
-                    return iterator(parent, ++offset);
+                    iterator result(*this);
+                    this->offset++;
+                    return result;
                 }
 
                 bool operator==( const iterator& rhs ) const {
@@ -75,14 +78,15 @@ class RingQueue{
                 }
 
                 bool operator!=( const iterator& rhs ) const {
-                    return this->offset != rhs.offset;
+                    return this->offset != rhs.offset ||
+                        this->parent != rhs.parent;
                 }
 
         };
 
 
 
-        /**
+       
         class const_iterator{
             private:
                 RingQueue* parent;
@@ -90,21 +94,25 @@ class RingQueue{
 
             private:
                 // Only RingQueue objects can create const_iterators...
-                const_iterator() ;
+                const_iterator(RingQueue* _parent, int _offset = 0)
+                    : parent(_parent), offset(_offset) { }
 
             public:
                 // ... however, const_iterators can be 'copied'.
-                const_iterator( const const_iterator& ) ;
+                const_iterator( const const_iterator& a){
+                    this->offset = a.offset;
+                    this->parent = a.parent;
+                }
 
             friend class RingQueue<ItemType,MAX_SIZE>;
         };
-        */
+        
 
 
 
     // Friendship goes both ways here.
     friend class iterator;
-    // friend class const_iterator;  // not implemented... yet.
+    friend class const_iterator; 
 
 
 
@@ -126,7 +134,7 @@ class RingQueue{
         // A helper function that computes the index of 'the end'
         // of the RingQueue
         int end_index() const {
-            return (begin_index+ring_size)% MAX_SIZE;
+            return (begin_index + ring_size) % MAX_SIZE;
         }
 
 
@@ -147,28 +155,30 @@ class RingQueue{
 
 			if ( end_index() > 0 )
 				return buffer[end_index() - 1]; 
-		return buffer[MAX_SIZE];
+	    
+            return buffer[MAX_SIZE];
         }
 
 
 
         // Mutators
         void push_back( const ItemType& value ){
-			// If the queue is full 
-			if (end() == begin()) {
-				if (begin_index < MAX_SIZE) 
-					begin_index++;
-				else 
-					begin_index = 0;
-			}else {								// The queue is not full yet
-				begin_index++;
-				ring_size++
-			}
 			*end() = value;
+			// If the queue is full 
+			if (ring_size == MAX_SIZE) {
+				if (begin_index < MAX_SIZE) {
+					begin_index++;
+				}else {
+					begin_index = 0;
+				}
+			}else{								// The queue is not full yet
+				ring_size++;
+			}
             return;
         }
 
         void pop_front(){
+            ring_size--;
 			if (begin_index < MAX_SIZE)
 				begin_index++;
 			else
@@ -178,10 +188,10 @@ class RingQueue{
 
         // Functions that return iterators
         iterator begin() { 
-            return iterator(this,begin_index); 
+            return iterator(this, 0); 
         }
         iterator end() {
-            return iterator(this,end_index());
+            return iterator(this, ring_size);
         }
 
         // Miscellaneous functions
@@ -226,18 +236,18 @@ int main(){
     // implementation of RingQueue<ItemType,int>::end(). 
     // If the implementation is not correct, it might result in 
     // an infinite loop.
-    /** 
+ 
     std::cout << "Queue via iterators: \n";
     for ( auto it = rq.begin() ; it != rq.end() ; ++it ) {
         std::cout << "Value: " << *it << ", address: " << &(*it) << '\n';
     }
     std::cout << '\n';
-    */
+
 
 
 
     rq.dump_queue();
-
+	system("PAUSE");
     return 0;
 }
 
