@@ -59,28 +59,23 @@ class RingQueue{
 
             public:
                 reference operator*() {
-                    // Replace the line(s) below with your code.
-                    return parent->buffer[0] ;  
+                    return parent->buffer[parent.begin_index + offset] ;  
                 }
 
                 iterator& operator++(){
-                    // Replace the line(s) below with your code.
-                    return *this;
+                    return iterator(parent,++offset);
                 }
 
                 iterator operator++( int unused ){
-                    // Replace the line(s) below with your code.
-                    return *this;
+                    return iterator(parent, ++offset);
                 }
 
                 bool operator==( const iterator& rhs ) const {
-                    // Replace the line(s) below with your code.
-                    return true;
+                    return this->offset == rhs.offset;
                 }
 
                 bool operator!=( const iterator& rhs ) const {
-                    // Replace the line(s) below with your code.
-                    return true;
+                    return this->offset != rhs.offset;
                 }
 
         };
@@ -131,8 +126,7 @@ class RingQueue{
         // A helper function that computes the index of 'the end'
         // of the RingQueue
         int end_index() const {
-            // Replace the line(s) below with your code.
-            return begin_index;
+            return (begin_index+ring_size)% MAX_SIZE;
         }
 
 
@@ -140,51 +134,59 @@ class RingQueue{
     public: 
         // Constructor
         RingQueue() : begin_index(0), ring_size(0) { }
+		
 
         // Accessors. Note: 'back()' is not considered part of the array.
         ItemType front() const { 
             if ( ring_size == 0 ) std::cerr<< "Warning: Empty ring!\n" ;
-            // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            // Feel free to throw instead...
-            
-            
-            // Replace the line(s) below with your code.
-            return buffer[0];
+
+            return buffer[begin_index];
         }
         ItemType back() const {  
             if ( ring_size == 0 ) std::cerr<< "Warning: Empty ring!\n" ;
-            // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            // Feel free to throw instead...
-            
-            
-            // Replace the line(s) below with your code.
-            return buffer[0]; 
+
+			if ( end_index() > 0 )
+				return buffer[end_index() - 1]; 
+		return buffer[MAX_SIZE];
         }
 
 
 
         // Mutators
         void push_back( const ItemType& value ){
+			// If the queue is full 
+			if (end() == begin()) {
+				if (begin_index < MAX_SIZE) 
+					begin_index++;
+				else 
+					begin_index = 0;
+			}else {								// The queue is not full yet
+				begin_index++;
+				ring_size++
+			}
+			*end() = value;
             return;
         }
+
         void pop_front(){
+			if (begin_index < MAX_SIZE)
+				begin_index++;
+			else
+				begin_index = 0;
             return;
         }
 
         // Functions that return iterators
         iterator begin() { 
-            // Replace the line(s) below with your code.
-            return iterator(this,0); 
+            return iterator(this,begin_index); 
         }
         iterator end() {
-            // Replace the line(s) below with your code.
-            return iterator(this,0);
+            return iterator(this,end_index());
         }
 
         // Miscellaneous functions
         size_t size() const {
-            // Replace the line(s) below with your code.
-            return 0;
+            return ring_size;
         }
 
         // Debugging functions
